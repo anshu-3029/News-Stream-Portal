@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}NewsStream — Live News{% endblock %}
+
+{% block content %}
+<!-- HERO / TRENDING CAROUSEL -->
+<section class="hero-section mb-5">
+    <div class="row g-4">
+        <!-- MAIN CAROUSEL -->
+        <div class="col-lg-8">
+            {% if trending %}
+            <div id="trendingCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel" data-bs-interval="5000">
+                <div class="carousel-indicators">
+                    {% for news in trending[:3] %}
+                    <button type="button" data-bs-target="#trendingCarousel" data-bs-slide-to="{{ loop.index0 }}"
+                            class="{{ 'active' if loop.first else '' }}"></button>
+                    {% endfor %}
+                </div>
+
+                <div class="carousel-inner">
+                    {% for news in trending[:3] %}
+                    <div class="carousel-item {{ 'active' if loop.first else '' }}">
+                        <div class="hero-main-card position-relative">
+                            <img src="{{ news.image_url or 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&h=500&fit=crop' }}"
+                                 class="hero-main-img"
+                                 alt="{{ news.title }}"
+                                 onerror="this.src='https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&h=500&fit=crop'">
+                            <div class="hero-content" style="pointer-events:none;">
+                                <div class="hero-meta">
+                                    <span class="badge bg-warning">{{ news.category|title }}</span>
+                                    <span class="meta-source">{{ news.source }}</span>
+                                </div>
+                                <h2 class="hero-title mt-2 mb-3">
+                                    {{ news.title[:80] }}{% if news.title|length > 80 %}…{% endif %}
+                                </h2>
+                                <p class="hero-desc mb-4">
+                                    {{ (news.description or '')[:130] }}{% if (news.description or '')|length > 130 %}…{% endif %}
+                                </p>
+                                <a href="{{ url_for('news_detail', news_id=news.id) }}" class="btn btn-warning hero-btn px-4 py-2" style="pointer-events:all;">
+                                    <i class="bi bi-arrow-right me-2"></i>Read Full Story
+                                </a>
+                            </div>
+                            <div class="hero-time">
+                                {% if news.published_at %}{{ news.published_at.strftime('%H:%M · %d %b') }}{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <button class="carousel-control-prev hero-control-prev" type="button" 
+                        data-bs-target="#trendingCarousel" data-bs-slide="prev">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <button class="carousel-control-next hero-control-next" type="button" 
+                        data-bs-target="#trendingCarousel" data-bs-slide="next">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+            {% else %}
+            <div class="hero-carousel d-flex align-items-center justify-content-center" style="background:var(--dark-card);border-radius:var(--radius);">
+                <div class="text-center p-5">
+                    <i class="bi bi-newspaper" style="font-size:3rem;color:var(--text-muted);"></i>
+                    <p class="mt-3" style="color:var(--text-secondary);">Loading latest news…</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- RECENT SIDEBAR -->
+        <div class="col-lg-4">
+            <div class="recent-header mb-3">
+                <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                    <i class="bi bi-lightning-charge-fill text-warning"></i>
+                    Latest Updates
+                    <span class="badge bg-primary ms-auto">{{ recent|length }}</span>
+                </h5>
+                <small style="color:var(--text-muted);">Live feed</small>
+            </div>
+            <div class="recent-news-list">
+                {% for news in recent %}
+                <a href="{{ url_for('news_detail', news_id=news.id) }}" class="recent-item">
+                    <div class="recent-img-container">
+                        {% if news.image_url %}
+                        <img src="{{ news.image_url }}" class="recent-img" alt="{{ news.title }}" loading="lazy"
+                             onerror="this.parentElement.style.background='var(--dark-surface)'">
+                        {% else %}
+                        <div class="d-flex align-items-center justify-content-center h-100" style="color:var(--text-muted);">
+                            <i class="bi bi-newspaper"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="recent-content">
+                        <div class="mb-1">
+                            <span class="badge bg-success" style="font-size:0.65rem;">{{ news.category|title }}</span>
+                            <small class="ms-1" style="color:var(--text-muted);font-size:0.7rem;">
+                                {% if news.published_at %}{{ news.published_at.strftime('%H:%M') }}{% endif %}
+                            </small>
+                        </div>
+                        <p class="recent-title mb-1">{{ news.title[:65] }}{% if news.title|length > 65 %}…{% endif %}</p>
+                        <small style="color:var(--text-muted);font-size:0.72rem;">{{ news.source }}</small>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CATEGORY FILTER -->
+<section class="category-section mb-4">
+    <div class="row align-items-center">
+        <div class="col-lg-7">
+            <h3 class="section-title mb-1">Browse by Category</h3>
+            <hr class="divider-line">
+            <p style="color:var(--text-secondary);font-size:0.88rem;">Stay updated with your favourite topics</p>
+        </div>
+        <div class="col-lg-5 text-lg-end">
+            <select id="categoryFilter" class="category-select">
+                <option value="general">📰 All News</option>
+                <option value="technology">💻 Technology</option>
+                <option value="sports">⚽ Sports</option>
+                <option value="business">💼 Business</option>
+                <option value="entertainment">🎬 Entertainment</option>
+                <option value="health">🏥 Health</option>
+                <option value="science">🔬 Science</option>
+            </select>
+        </div>
+    </div>
+</section>
+
+<!-- NEWS GRID -->
+<section class="news-grid-section pb-4">
+    {% if news %}
+    <div class="row g-4" id="newsContainer">
+        {% for article in news %}
+        <div class="col-xl-3 col-lg-4 col-md-6">
+            <article class="card h-100 news-card shadow-sm border-0 overflow-hidden"
+                     onclick="window.location.href='{{ url_for('news_detail', news_id=article.id) }}';">
+                <!-- IMAGE -->
+                <div class="card-img-container position-relative">
+                    {% if article.image_url %}
+                    <img src="{{ article.image_url }}"
+                         class="card-img-top"
+                         alt="{{ article.title[:50] }}"
+                         loading="lazy"
+                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    {% endif %}
+                    <div class="card-img-placeholder {{ 'd-none' if article.image_url else '' }}">
+                        <i class="bi bi-newspaper"></i>
+                    </div>
+                    <span class="card-category-badge">{{ article.category|title }}</span>
+                </div>
+
+                <!-- CONTENT -->
+                <div class="card-body p-3 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <small style="color:var(--text-muted);font-size:0.75rem;">
+                            <i class="bi bi-clock me-1"></i>
+                            {% if article.published_at %}{{ article.published_at.strftime('%d %b %Y') }}{% endif %}
+                        </small>
+                        <button class="btn btn-sm bookmark-btn p-1 ms-2 rounded-circle"
+                                data-news-id="{{ article.id }}" title="Bookmark"
+                                onclick="event.stopPropagation();">
+                            {% if article.id in bookmarks %}
+                            <i class="bi bi-star-fill text-warning"></i>
+                            {% else %}
+                            <i class="bi bi-star"></i>
+                            {% endif %}
+                        </button>
+                    </div>
+                    <h6 class="card-title fw-bold mb-2 flex-grow-1">
+                        {{ article.title[:72] }}{% if article.title|length > 72 %}…{% endif %}
+                    </h6>
+                    <p class="card-text small mb-2">
+                        {{ (article.description or '')[:110] }}{% if (article.description or '')|length > 110 %}…{% endif %}
+                    </p>
+                    <div class="d-flex align-items-center mt-auto pt-2 border-top" style="border-color:var(--dark-border)!important;">
+                        <i class="bi bi-building me-2" style="color:var(--text-muted);font-size:0.8rem;"></i>
+                        <span style="color:var(--text-muted);font-size:0.78rem;font-weight:500;">{{ article.source }}</span>
+                    </div>
+                </div>
+            </article>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-newspaper" style="font-size:3rem;color:var(--text-muted);"></i>
+        <h5 class="mt-3" style="color:var(--text-secondary);">No news articles yet</h5>
+        <p style="color:var(--text-muted);">Check your News API key or try a different category.</p>
+    </div>
+    {% endif %}
+</section>
+
+<!-- PAGINATION -->
+{% if pagination and (pagination.has_prev or pagination.has_next) %}
+<nav aria-label="Pagination" class="pb-4">
+    <ul class="pagination justify-content-center pagination-dark">
+        {% if pagination.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="?category={{ current_category }}&page={{ pagination.prev_num }}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% endif %}
+        {% for page_num in pagination.iter_pages(left_edge=2, right_edge=2) %}
+            {% if page_num %}
+            <li class="page-item {{ 'active' if page_num == pagination.page else '' }}">
+                <a class="page-link" href="?category={{ current_category }}&page={{ page_num }}">{{ page_num }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+        {% if pagination.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?category={{ current_category }}&page={{ pagination.next_num }}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/news.js') }}"></script>
+{% endblock %}

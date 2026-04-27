@@ -1,0 +1,162 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Edit Article{% endblock %}
+{% block page_title %}Edit Article{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <h2 class="admin-page-title">Edit <span>Article</span></h2>
+    <a href="{{ url_for('admin') }}" class="btn btn-sm"
+       style="background:rgba(255,255,255,0.05);border:1px solid var(--navy-border);color:var(--text-secondary);font-size:0.78rem;">
+        <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="admin-form-card">
+            <form method="POST" action="{{ url_for('admin_edit_news', news_id=news.id) }}">
+
+                <div class="admin-form-section">
+                    <h6><i class="bi bi-type me-2"></i>Article Content</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Headline *</label>
+                        <input type="text" name="title" class="form-control"
+                               value="{{ news.title }}" required maxlength="200">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Body / Description</label>
+                        <textarea name="description" class="form-control" rows="6">{{ news.description or '' }}</textarea>
+                    </div>
+                </div>
+
+                <div class="admin-form-section" style="border-left-color:var(--sky-blue);">
+                    <h6 style="color:var(--sky-blue);"><i class="bi bi-link-45deg me-2"></i>Source & Media</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Source Name</label>
+                            <input type="text" name="source" class="form-control" value="{{ news.source or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Source URL</label>
+                            <input type="url" name="url" class="form-control" value="{{ news.url or '' }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Cover Image URL</label>
+                            <input type="url" name="image_url" class="form-control"
+                                   id="imageUrlInput" value="{{ news.image_url or '' }}">
+                            <div id="imgPreviewBox" class="mt-2" style="{{ 'display:block' if news.image_url else 'display:none' }}">
+                                <img id="imgPreview" src="{{ news.image_url or '' }}"
+                                     style="max-height:140px;border-radius:8px;border:1px solid var(--navy-border);">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-form-section" style="border-left-color:var(--red);">
+                    <h6 style="color:var(--red);"><i class="bi bi-tags me-2"></i>Classification</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Category *</label>
+                            <select name="category" class="form-select" required>
+                                {% for cat in categories %}
+                                <option value="{{ cat }}" {{ 'selected' if news.category == cat }}>{{ cat|title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="is_featured" id="isFeatured" value="1"
+                                       {{ 'checked' if news.is_featured }}>
+                                <label class="form-check-label" for="isFeatured" style="color:var(--gold);font-weight:600;font-size:0.88rem;">
+                                    <i class="bi bi-star-fill me-1"></i>Feature this article
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Article metadata -->
+                <div class="mb-3 p-3" style="background:var(--bg-surface);border-radius:var(--radius-sm);">
+                    <div class="row g-2" style="font-size:0.78rem;color:var(--text-muted);">
+                        <div class="col-sm-4"><i class="bi bi-calendar3 me-1"></i>
+                            {{ news.published_at.strftime('%d %b %Y %H:%M') if news.published_at else '—' }}
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="status-dot {{ 'dot-admin' if news.is_admin_post else 'dot-api' }}"></span>
+                            {{ 'Admin Post' if news.is_admin_post else 'API News' }}
+                        </div>
+                        <div class="col-sm-4">
+                            <span class="status-dot {{ 'dot-approved' if news.is_approved else 'dot-rejected' }}"></span>
+                            {{ 'Live' if news.is_approved else 'Hidden' }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-5">
+                        <i class="bi bi-check-circle me-2"></i>Save Changes
+                    </button>
+                    <a href="{{ url_for('admin') }}" class="btn"
+                       style="background:var(--bg-surface);border:1px solid var(--navy-border);color:var(--text-secondary);">
+                        Cancel
+                    </a>
+                    <form method="POST" action="{{ url_for('admin_delete_news', news_id=news.id) }}"
+                          style="margin-left:auto;" onsubmit="return confirm('Delete permanently?')">
+                        <button type="submit" class="btn"
+                                style="background:rgba(200,39,26,0.1);border:1px solid rgba(200,39,26,0.3);color:var(--red);">
+                            <i class="bi bi-trash3 me-1"></i>Delete
+                        </button>
+                    </form>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CURRENT STATUS -->
+    <div class="col-lg-4">
+        <div style="background:var(--bg-card);border:1px solid var(--navy-border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1rem;">
+            <h6 style="font-family:'Oswald',sans-serif;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-secondary);margin-bottom:1rem;">
+                <i class="bi bi-info-circle me-2"></i>Quick Actions
+            </h6>
+            {% if news.is_approved %}
+            <form method="POST" action="{{ url_for('admin_reject_news', news_id=news.id) }}" class="mb-2">
+                <button type="submit" class="btn w-100 btn-sm"
+                        style="background:rgba(200,39,26,0.1);border:1px solid rgba(200,39,26,0.3);color:var(--red);">
+                    <i class="bi bi-eye-slash me-1"></i>Hide from Feed
+                </button>
+            </form>
+            {% else %}
+            <form method="POST" action="{{ url_for('admin_approve_news', news_id=news.id) }}" class="mb-2">
+                <button type="submit" class="btn w-100 btn-sm"
+                        style="background:rgba(82,196,122,0.1);border:1px solid rgba(82,196,122,0.3);color:#52c47a;">
+                    <i class="bi bi-check-lg me-1"></i>Show on Feed
+                </button>
+            </form>
+            {% endif %}
+            <form method="POST" action="{{ url_for('admin_feature_news', news_id=news.id) }}">
+                <button type="submit" class="btn w-100 btn-sm"
+                        style="background:rgba(240,165,0,0.1);border:1px solid rgba(240,165,0,0.25);color:var(--gold);">
+                    <i class="bi bi-{{ 'star-fill' if news.is_featured else 'star' }} me-1"></i>
+                    {{ 'Unfeature' if news.is_featured else 'Feature' }} Article
+                </button>
+            </form>
+        </div>
+        {% if news.image_url %}
+        <img src="{{ news.image_url }}" style="width:100%;border-radius:var(--radius);border:1px solid var(--navy-border);"
+             onerror="this.style.display='none'">
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('imageUrlInput')?.addEventListener('input', function() {
+    const url = this.value.trim();
+    const box = document.getElementById('imgPreviewBox');
+    const img = document.getElementById('imgPreview');
+    if (url) { img.src = url; box.style.display = 'block'; img.onerror = () => box.style.display = 'none'; }
+    else { box.style.display = 'none'; }
+});
+</script>
+{% endblock %}

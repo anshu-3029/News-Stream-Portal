@@ -1,0 +1,204 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Contact Queries{% endblock %}
+{% block page_title %}Contact Queries{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div>
+        <h2 class="admin-page-title">Contact <span>Queries</span></h2>
+        <p style="color:var(--text-muted);font-size:0.82rem;margin-top:2px;">
+            Messages submitted by users and visitors
+            <span style="background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.25);color:var(--gold);font-size:0.65rem;font-weight:700;padding:0.1rem 0.45rem;border-radius:3px;text-transform:uppercase;letter-spacing:0.05em;margin-left:8px;vertical-align:middle;">
+                <i class="bi bi-star-fill me-1" style="font-size:0.55rem;"></i>Super Admin Only
+            </span>
+        </p>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+        {% if unread_count > 0 %}
+        <span style="background:rgba(200,39,26,0.15);border:1px solid rgba(200,39,26,0.3);color:var(--red);font-size:0.8rem;font-weight:700;padding:0.4rem 0.85rem;border-radius:6px;">
+            <i class="bi bi-envelope-fill me-1"></i>{{ unread_count }} Unread
+        </span>
+        {% else %}
+        <span style="background:rgba(82,196,122,0.1);border:1px solid rgba(82,196,122,0.2);color:#52c47a;font-size:0.8rem;font-weight:700;padding:0.4rem 0.85rem;border-radius:6px;">
+            <i class="bi bi-check-all me-1"></i>All Read
+        </span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="admin-filter-bar mb-3">
+    <form method="GET" action="{{ url_for('admin_queries') }}" class="d-flex flex-wrap gap-2 align-items-center w-100" id="qFilterForm">
+        <span style="font-size:0.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">
+            <i class="bi bi-funnel me-1"></i>Filter
+        </span>
+
+        <!-- Status tabs -->
+        {% for val, label, icon in [('all','All','bi-inbox'),('unread','Unread','bi-envelope'),('pending','Pending','bi-hourglass'),('resolved','Resolved','bi-check-circle')] %}
+        <a href="{{ url_for('admin_queries', status=val, subject=subject_filter) }}"
+           style="font-size:0.78rem;font-weight:700;padding:0.38rem 0.85rem;border-radius:6px;border:1px solid {{ 'var(--red)' if status==val else 'var(--navy-border)' }};background:{{ 'rgba(200,39,26,0.12)' if status==val else 'var(--bg-surface)' }};color:{{ 'var(--red)' if status==val else 'var(--text-secondary)' }};text-decoration:none;transition:var(--transition);">
+            <i class="bi {{ icon }} me-1"></i>{{ label }}
+        </a>
+        {% endfor %}
+
+        <select name="subject" class="filter-select ms-2" onchange="document.getElementById('qFilterForm').submit()">
+            <option value="all" {{ 'selected' if subject_filter=='all' }}>All Subjects</option>
+            {% for s in ['General Inquiry','Report an Issue','Partnership','Feedback','Content Request','Account Help','Other'] %}
+            <option value="{{ s }}" {{ 'selected' if subject_filter==s }}>{{ s }}</option>
+            {% endfor %}
+        </select>
+
+        <span style="margin-left:auto;color:var(--text-muted);font-size:0.78rem;">
+            {{ queries.total }} queries
+        </span>
+    </form>
+</div>
+
+<!-- BULK ACTIONS -->
+<form method="POST" action="{{ url_for('admin_bulk_queries') }}" id="bulkQForm">
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <select name="bulk_action" class="filter-select">
+            <option value="">Bulk Action…</option>
+            <option value="mark_read">Mark as Read</option>
+            <option value="resolve">Mark Resolved</option>
+            <option value="delete">Delete Selected</option>
+        </select>
+        <button type="submit" class="btn btn-sm"
+                style="background:rgba(200,39,26,0.1);border:1px solid rgba(200,39,26,0.25);color:var(--red);font-weight:700;font-size:0.75rem;"
+                onclick="return confirm('Apply bulk action?')">
+            <i class="bi bi-check2-all me-1"></i>Apply
+        </button>
+        <button type="button" class="btn btn-sm"
+                style="background:rgba(255,255,255,0.04);border:1px solid var(--navy-border);color:var(--text-secondary);font-size:0.75rem;"
+                onclick="document.querySelectorAll('.qcheck').forEach(c=>c.checked=document.getElementById('qCheckAll').checked)">
+            <i class="bi bi-check-square me-1"></i>Select All
+        </button>
+    </div>
+
+    <!-- QUERIES TABLE -->
+    <div class="admin-news-table">
+        {% if queries.items %}
+        <div class="table-responsive">
+            <table class="table ant mb-0">
+                <thead>
+                    <tr>
+                        <th width="36"><input type="checkbox" class="form-check-input" id="qCheckAll" onchange="document.querySelectorAll('.qcheck').forEach(c=>c.checked=this.checked)"></th>
+                        <th width="14"></th>
+                        <th>Name / Email</th>
+                        <th width="150">Subject</th>
+                        <th>Message Preview</th>
+                        <th width="110">Received</th>
+                        <th width="90">Status</th>
+                        <th width="80">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for q in queries.items %}
+                    <tr style="{{ 'opacity:0.65;' if q.is_resolved else '' }}">
+                        <td><input type="checkbox" class="form-check-input qcheck" name="selected_ids" value="{{ q.id }}"></td>
+
+                        <!-- Unread dot -->
+                        <td>
+                            {% if not q.is_read %}
+                            <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 6px rgba(200,39,26,0.6);"></span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <div style="font-weight:{{ '700' if not q.is_read else '500' }};font-size:0.88rem;color:var(--text-primary);">{{ q.name }}</div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);">{{ q.email }}</div>
+                            {% if q.user %}
+                            <div style="font-size:0.7rem;margin-top:2px;">
+                                <span style="background:rgba(58,143,212,0.1);border:1px solid rgba(58,143,212,0.2);color:var(--sky-blue);padding:0.1rem 0.4rem;border-radius:3px;">
+                                    <i class="bi bi-person-fill me-1"></i>{{ q.user.username }}
+                                </span>
+                            </div>
+                            {% else %}
+                            <div style="font-size:0.7rem;margin-top:2px;">
+                                <span style="background:rgba(255,255,255,0.04);border:1px solid var(--navy-border);color:var(--text-muted);padding:0.1rem 0.4rem;border-radius:3px;">Guest</span>
+                            </div>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <span style="font-size:0.75rem;font-weight:700;background:rgba(240,165,0,0.1);border:1px solid rgba(240,165,0,0.2);color:var(--gold);padding:0.2rem 0.55rem;border-radius:4px;">
+                                {{ q.subject }}
+                            </span>
+                        </td>
+
+                        <td>
+                            <span style="font-size:0.82rem;color:var(--text-secondary);">
+                                {{ q.message[:80] }}{% if q.message|length > 80 %}…{% endif %}
+                            </span>
+                        </td>
+
+                        <td style="color:var(--text-muted);font-size:0.75rem;white-space:nowrap;">
+                            {{ q.submitted_at.strftime('%d %b %Y') }}<br>
+                            <span style="font-size:0.7rem;">{{ q.submitted_at.strftime('%H:%M') }}</span>
+                        </td>
+
+                        <td>
+                            {% if q.is_resolved %}
+                            <span style="font-size:0.7rem;font-weight:700;color:#52c47a;">
+                                <span class="status-dot dot-approved"></span>Resolved
+                            </span>
+                            {% else %}
+                            <span style="font-size:0.7rem;font-weight:700;color:var(--gold);">
+                                <span class="status-dot" style="background:var(--gold);display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;"></span>Pending
+                            </span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{{ url_for('admin_view_query', query_id=q.id) }}" class="btn-action btn-edit" title="View & Reply">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('admin_delete_query', query_id=q.id) }}" style="display:inline;"
+                                      onsubmit="return confirm('Delete this query?')">
+                                    <button type="submit" class="btn-action btn-delete" title="Delete">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PAGINATION -->
+        {% if queries.has_prev or queries.has_next %}
+        <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-top:1px solid var(--navy-border);">
+            <small style="color:var(--text-muted);">Page {{ queries.page }} of {{ queries.pages }}</small>
+            <nav>
+                <ul class="pagination pagination-dark mb-0" style="gap:3px;">
+                    {% if queries.has_prev %}
+                    <li class="page-item"><a class="page-link" href="?page={{ queries.prev_num }}&status={{ status }}&subject={{ subject_filter }}"><i class="bi bi-chevron-left"></i></a></li>
+                    {% endif %}
+                    {% for p in queries.iter_pages(left_edge=1,right_edge=1) %}
+                        {% if p %}
+                        <li class="page-item {{ 'active' if p==queries.page }}"><a class="page-link" href="?page={{ p }}&status={{ status }}&subject={{ subject_filter }}">{{ p }}</a></li>
+                        {% else %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if queries.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ queries.next_num }}&status={{ status }}&subject={{ subject_filter }}"><i class="bi bi-chevron-right"></i></a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-inbox" style="font-size:3rem;color:var(--text-muted);"></i>
+            <h6 class="mt-3" style="color:var(--text-secondary);">No queries found</h6>
+            <p style="color:var(--text-muted);font-size:0.85rem;">No contact messages match this filter.</p>
+        </div>
+        {% endif %}
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,513 @@
+{% extends "base.html" %}
+{% block title %}{{ news.title[:60] }} — NewsStream{% endblock %}
+
+{% block content %}
+<!-- Reading progress bar -->
+<div id="readingProgress"></div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+
+        <!-- BACK -->
+        <a href="{{ url_for('index') }}" class="d-inline-flex align-items-center gap-2 mb-4"
+           style="color:var(--text-secondary);font-size:0.85rem;font-weight:600;transition:var(--transition);">
+            <i class="bi bi-arrow-left"></i> Back to News
+        </a>
+
+        <!-- HERO IMAGE -->
+        {% if news.image_url %}
+        <div class="detail-hero mb-4">
+            <img src="{{ news.image_url }}" alt="{{ news.title }}"
+                 onerror="this.parentElement.style.display='none'">
+            <div class="detail-hero-overlay">
+                <span class="badge bg-warning mb-2">{{ news.category|title }}</span>
+                <h1 class="hero-title">{{ news.title }}</h1>
+            </div>
+        </div>
+        {% else %}
+        <h1 class="section-title mb-3">{{ news.title }}</h1>
+        {% endif %}
+
+        <!-- META -->
+        <div class="d-flex flex-wrap align-items-center gap-3 mb-4" style="color:var(--text-secondary);font-size:0.85rem;">
+            <span><i class="bi bi-building me-1"></i>{{ news.source }}</span>
+            {% if news.published_at %}
+            <span><i class="bi bi-calendar3 me-1"></i>{{ news.published_at.strftime('%B %d, %Y at %H:%M') }}</span>
+            {% endif %}
+            <span><i class="bi bi-chat me-1"></i>{{ comments|length }} comment{{ 's' if comments|length != 1 }}</span>
+            {% if current_user.is_authenticated %}
+            <form method="POST" action="{{ url_for('bookmark_news', news_id=news.id) }}" class="ms-auto">
+                <button type="submit" class="btn btn-sm"
+                        style="background:var(--bg-surface);border:1px solid var(--navy-border);color:var(--text-primary);font-size:0.78rem;font-weight:600;">
+                    <i class="bi bi-star me-1"></i>Bookmark
+                </button>
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- AI SUMMARY -->
+        {% if news.summary %}
+        <div class="ai-summary-box mb-4">
+            <span class="ai-badge"><i class="bi bi-cpu me-1"></i>AI Summary</span>
+            <p class="mb-0" style="color:var(--text-primary);font-size:0.95rem;line-height:1.7;">{{ news.summary }}</p>
+        </div>
+        {% endif %}
+
+        <!-- ARTICLE BODY -->
+        <div class="detail-content mb-4">
+            <p style="font-size:1.05rem;line-height:1.85;color:var(--text-secondary);">
+                {{ news.description or 'Full article content is available at the source.' }}
+            </p>
+            {% if news.url %}
+            <div class="mt-4 pt-3" style="border-top:1px solid var(--navy-border);">
+                <a href="{{ news.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary px-4">
+                    <i class="bi bi-box-arrow-up-right me-2"></i>Read Full Article at {{ news.source }}
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ══════════════════════════════════════
+             COMMENTS SECTION
+        ══════════════════════════════════════ -->
+        <div class="comments-section">
+
+            <!-- HEADER -->
+            <div class="comments-header">
+                <h4 class="comments-title">
+                    <i class="bi bi-chat-dots-fill me-2" style="color:var(--gold);"></i>
+                    Discussion
+                    <span class="comment-count-badge">{{ comments|length }}</span>
+                </h4>
+            </div>
+
+            <!-- ADD COMMENT FORM -->
+            <div class="comment-form-box mb-4">
+                <div class="d-flex gap-3 align-items-start">
+                    <!-- User avatar -->
+                    <div class="comment-avatar" style="flex-shrink:0;">
+                        {% if current_user.profile_pic %}
+                        <img src="{{ current_user.profile_pic }}"
+                             style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);"
+                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                        <div class="comment-avatar-letter" style="display:none;">{{ current_user.username[0]|upper }}</div>
+                        {% else %}
+                        <div class="comment-avatar-letter">{{ current_user.username[0]|upper }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div style="flex:1;">
+                        <div style="font-size:0.8rem;font-weight:700;color:var(--text-secondary);margin-bottom:0.5rem;">
+                            Commenting as <span style="color:var(--gold);">{{ current_user.username }}</span>
+                        </div>
+                        <form method="POST" action="{{ url_for('add_comment', news_id=news.id) }}" id="mainCommentForm">
+                            <textarea name="content" class="comment-textarea" rows="3"
+                                      placeholder="Share your thoughts on this article…"
+                                      maxlength="1000" required minlength="3"
+                                      oninput="updateCharCount(this, 'mainCount')"></textarea>
+                            <div class="d-flex align-items-center justify-content-between mt-2">
+                                <small style="color:var(--text-muted);font-size:0.72rem;">
+                                    <span id="mainCount">0</span>/1000 · Comments are reviewed before publishing
+                                </small>
+                                <button type="submit" class="btn-comment-submit">
+                                    <i class="bi bi-send-fill me-1"></i>Post Comment
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PENDING NOTICE (if user has pending comments) -->
+            {% set user_pending = namespace(count=0) %}
+            {# Check done server-side would be cleaner, but this works for display #}
+
+            <!-- COMMENTS LIST -->
+            {% if comments %}
+            <div class="comments-list">
+                {% for comment in comments %}
+                <div class="comment-card" id="comment-{{ comment.id }}">
+                    <div class="d-flex gap-3">
+                        <!-- Avatar -->
+                        <div style="flex-shrink:0;">
+                            {% if comment.user.profile_pic %}
+                            <img src="{{ comment.user.profile_pic }}"
+                                 style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--navy-border);"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="comment-avatar-letter" style="display:none;width:40px;height:40px;">{{ comment.user.username[0]|upper }}</div>
+                            {% else %}
+                            <div class="comment-avatar-letter" style="width:40px;height:40px;">{{ comment.user.username[0]|upper }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Content -->
+                        <div style="flex:1;min-width:0;">
+                            <!-- Author + time -->
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                <span class="comment-author">{{ comment.user.username }}</span>
+                                {% if comment.user.is_admin %}
+                                <span class="comment-admin-badge">
+                                    <i class="bi bi-shield-fill me-1"></i>Admin
+                                </span>
+                                {% endif %}
+                                <span class="comment-time">
+                                    <i class="bi bi-clock me-1"></i>
+                                    {{ comment.submitted_at.strftime('%d %b %Y · %H:%M') }}
+                                </span>
+                            </div>
+
+                            <!-- Body -->
+                            <p class="comment-body">{{ comment.content }}</p>
+
+                            <!-- Actions row -->
+                            <div class="d-flex align-items-center gap-3 mt-2">
+                                <!-- Reply toggle -->
+                                <button class="comment-action-btn"
+                                        onclick="toggleReply({{ comment.id }})">
+                                    <i class="bi bi-reply me-1"></i>Reply
+                                </button>
+
+                                <!-- Delete (own comment or admin) -->
+                                {% if comment.user_id == current_user.id or current_user.is_admin %}
+                                <form method="POST" action="{{ url_for('delete_comment', comment_id=comment.id) }}" style="display:inline;"
+                                      onsubmit="return confirm('Delete this comment?')">
+                                    <button type="submit" class="comment-action-btn" style="color:var(--red);">
+                                        <i class="bi bi-trash3 me-1"></i>Delete
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                <!-- Reply count -->
+                                {% set reply_count = comment.replies.filter_by(is_approved=True, is_rejected=False).count() %}
+                                {% if reply_count > 0 %}
+                                <span style="font-size:0.75rem;color:var(--text-muted);">
+                                    <i class="bi bi-chat me-1"></i>{{ reply_count }} repl{{ 'ies' if reply_count != 1 else 'y' }}
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- REPLY FORM (hidden by default) -->
+                            <div id="replyForm-{{ comment.id }}" class="reply-form-box" style="display:none;">
+                                <form method="POST" action="{{ url_for('add_comment', news_id=news.id) }}">
+                                    <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                                    <div class="d-flex gap-2 align-items-start">
+                                        <div class="comment-avatar-letter" style="width:32px;height:32px;font-size:0.7rem;flex-shrink:0;">
+                                            {{ current_user.username[0]|upper }}
+                                        </div>
+                                        <div style="flex:1;">
+                                            <textarea name="content" class="comment-textarea" rows="2"
+                                                      placeholder="Write a reply…"
+                                                      maxlength="1000" required minlength="3"
+                                                      oninput="updateCharCount(this, 'replyCount{{ comment.id }}')"></textarea>
+                                            <div class="d-flex align-items-center justify-content-between mt-1">
+                                                <small style="color:var(--text-muted);font-size:0.7rem;">
+                                                    <span id="replyCount{{ comment.id }}">0</span>/1000
+                                                </small>
+                                                <div class="d-flex gap-2">
+                                                    <button type="button" class="comment-action-btn"
+                                                            onclick="toggleReply({{ comment.id }})">Cancel</button>
+                                                    <button type="submit" class="btn-comment-submit" style="font-size:0.75rem;padding:0.3rem 0.85rem;">
+                                                        <i class="bi bi-send-fill me-1"></i>Reply
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- REPLIES -->
+                            {% set approved_replies = comment.replies.filter_by(is_approved=True, is_rejected=False).order_by('submitted_at').all() %}
+                            {% if approved_replies %}
+                            <div class="replies-list">
+                                {% for reply in approved_replies %}
+                                <div class="reply-card">
+                                    <div class="d-flex gap-2">
+                                        <div style="flex-shrink:0;">
+                                            {% if reply.user.profile_pic %}
+                                            <img src="{{ reply.user.profile_pic }}"
+                                                 style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid var(--navy-border);"
+                                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                            <div class="comment-avatar-letter" style="display:none;width:32px;height:32px;font-size:0.7rem;">{{ reply.user.username[0]|upper }}</div>
+                                            {% else %}
+                                            <div class="comment-avatar-letter" style="width:32px;height:32px;font-size:0.7rem;">{{ reply.user.username[0]|upper }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div style="flex:1;">
+                                            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                                <span class="comment-author" style="font-size:0.82rem;">{{ reply.user.username }}</span>
+                                                {% if reply.user.is_admin %}
+                                                <span class="comment-admin-badge">Admin</span>
+                                                {% endif %}
+                                                <span class="comment-time">{{ reply.submitted_at.strftime('%d %b · %H:%M') }}</span>
+                                            </div>
+                                            <p class="comment-body" style="font-size:0.85rem;">{{ reply.content }}</p>
+                                            {% if reply.user_id == current_user.id or current_user.is_admin %}
+                                            <form method="POST" action="{{ url_for('delete_comment', comment_id=reply.id) }}" style="display:inline;"
+                                                  onsubmit="return confirm('Delete this reply?')">
+                                                <button type="submit" class="comment-action-btn" style="color:var(--red);font-size:0.72rem;">
+                                                    <i class="bi bi-trash3 me-1"></i>Delete
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            <!-- EMPTY STATE -->
+            <div class="comments-empty">
+                <i class="bi bi-chat-square-dots" style="font-size:2.5rem;color:var(--text-muted);display:block;margin-bottom:0.75rem;"></i>
+                <h6 style="color:var(--text-secondary);">No comments yet</h6>
+                <p style="color:var(--text-muted);font-size:0.85rem;">Be the first to share your thoughts!</p>
+            </div>
+            {% endif %}
+
+        </div><!-- /comments-section -->
+
+        <!-- BACK + MORE -->
+        <div class="d-flex gap-3 mt-4">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                <i class="bi bi-grid me-2"></i>More News
+            </a>
+            <a href="{{ url_for('index') }}?category={{ news.category }}" class="btn"
+               style="background:var(--bg-surface);border:1px solid var(--navy-border);color:var(--text-primary);">
+                <i class="bi bi-tag me-2"></i>More in {{ news.category|title }}
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+/* ── COMMENTS ── */
+.comments-section {
+    background: var(--bg-card);
+    border: 1px solid var(--navy-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.comments-header {
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, rgba(200,39,26,0.08), rgba(240,165,0,0.04));
+    border-bottom: 1px solid var(--navy-border);
+}
+
+.comments-title {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.comment-count-badge {
+    background: var(--red);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 99px;
+    font-family: 'Source Sans 3', sans-serif;
+}
+
+/* ADD COMMENT FORM */
+.comment-form-box {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--navy-border);
+    background: rgba(255,255,255,0.01);
+}
+
+.comment-textarea {
+    width: 100%;
+    background: var(--bg-surface);
+    border: 1.5px solid var(--navy-border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    color: var(--text-primary);
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.9rem;
+    resize: vertical;
+    min-height: 80px;
+    transition: all 0.25s ease;
+    outline: none;
+}
+
+.comment-textarea:focus {
+    border-color: var(--gold);
+    background: rgba(240,165,0,0.03);
+    box-shadow: 0 0 0 3px rgba(240,165,0,0.08);
+}
+
+.comment-textarea::placeholder { color: var(--text-muted); }
+
+.btn-comment-submit {
+    background: var(--red);
+    border: none;
+    border-radius: 8px;
+    padding: 0.45rem 1.1rem;
+    color: #fff;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 10px rgba(200,39,26,0.3);
+}
+.btn-comment-submit:hover {
+    background: #e03020;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(200,39,26,0.4);
+}
+
+/* COMMENT AVATAR */
+.comment-avatar-letter {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--red), var(--gold));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.95rem; font-weight: 700; color: #fff;
+}
+
+/* COMMENT CARDS */
+.comments-list { padding: 0 1.5rem; }
+
+.comment-card {
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--navy-border);
+    transition: background 0.2s ease;
+}
+.comment-card:last-child { border-bottom: none; }
+.comment-card:hover { background: rgba(255,255,255,0.01); }
+
+.comment-author {
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    font-family: 'Oswald', sans-serif;
+    letter-spacing: 0.01em;
+}
+
+.comment-admin-badge {
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: rgba(200,39,26,0.12);
+    border: 1px solid rgba(200,39,26,0.25);
+    color: var(--red);
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+}
+
+.comment-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.comment-body {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    line-height: 1.7;
+    margin: 0;
+    word-break: break-word;
+}
+
+.comment-action-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s;
+    font-family: 'Source Sans 3', sans-serif;
+}
+.comment-action-btn:hover { color: var(--text-primary); }
+
+/* REPLY FORM */
+.reply-form-box {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(255,255,255,0.02);
+    border-radius: 10px;
+    border: 1px solid var(--navy-border);
+    animation: slideDown 0.2s ease;
+}
+@keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+
+/* REPLIES */
+.replies-list {
+    margin-top: 1rem;
+    padding-left: 1.25rem;
+    border-left: 2px solid rgba(240,165,0,0.2);
+}
+
+.reply-card {
+    padding: 0.85rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.reply-card:last-child { border-bottom: none; }
+
+/* EMPTY STATE */
+.comments-empty {
+    padding: 3rem;
+    text-align: center;
+}
+
+/* READING PROGRESS */
+#readingProgress {
+    position: fixed;
+    top: var(--navbar-h);
+    left: 0;
+    height: 3px;
+    background: linear-gradient(to right, var(--red), var(--gold));
+    width: 0%;
+    z-index: 9999;
+    transition: width 0.1s linear;
+    border-radius: 0 99px 99px 0;
+}
+</style>
+
+<script>
+// Reading progress
+window.addEventListener('scroll', function() {
+    var el = document.documentElement;
+    var pct = (el.scrollTop || document.body.scrollTop) / (el.scrollHeight - el.clientHeight) * 100;
+    document.getElementById('readingProgress').style.width = Math.min(pct, 100) + '%';
+});
+
+// Character counter
+function updateCharCount(textarea, countId) {
+    var el = document.getElementById(countId);
+    if (el) el.textContent = textarea.value.length;
+}
+
+// Toggle reply form
+function toggleReply(commentId) {
+    var form = document.getElementById('replyForm-' + commentId);
+    if (!form) return;
+    var isHidden = form.style.display === 'none' || form.style.display === '';
+    form.style.display = isHidden ? 'block' : 'none';
+    if (isHidden) form.querySelector('textarea')?.focus();
+}
+</script>
+{% endblock %}

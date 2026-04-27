@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile — NewsStream{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+    <!-- SIDEBAR -->
+    <div class="col-lg-3 col-md-4">
+        <div class="user-sidebar">
+            <div class="p-4 text-center" style="border-bottom:1px solid var(--navy-border);background:linear-gradient(160deg,var(--bg-surface),var(--bg-card));">
+                <div class="mb-3" style="position:relative;display:inline-block;">
+                    {% if current_user.profile_pic %}
+                    <img src="{{ current_user.profile_pic }}" id="avatarPreview"
+                         style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);box-shadow:0 4px 20px var(--red-glow);"
+                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="user-avatar" style="display:none;">{{ current_user.username[0]|upper }}</div>
+                    {% else %}
+                    <div class="user-avatar" id="avatarFallback">{{ current_user.username[0]|upper }}</div>
+                    {% endif %}
+                </div>
+                <h6 class="fw-bold mb-1" style="font-family:'Oswald',sans-serif;">{{ current_user.username }}</h6>
+                <small style="color:var(--text-muted);">{{ current_user.email }}</small>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('dashboard') }}" class="sidebar-nav-item"><i class="bi bi-grid"></i> Dashboard</a>
+                <a href="{{ url_for('edit_profile') }}" class="sidebar-nav-item active"><i class="bi bi-person-gear"></i> Edit Profile</a>
+                <a href="{{ url_for('index') }}" class="sidebar-nav-item"><i class="bi bi-house-door"></i> News Feed</a>
+                {% if current_user.is_admin %}<a href="{{ url_for('admin') }}" class="sidebar-nav-item" style="color:var(--red)!important;"><i class="bi bi-shield-check"></i> Admin Panel</a>{% endif %}
+                <a href="{{ url_for('logout') }}" class="sidebar-nav-item" style="color:var(--red)!important;"><i class="bi bi-box-arrow-right"></i> Logout</a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="col-lg-9 col-md-8">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a href="{{ url_for('dashboard') }}" style="color:var(--text-secondary);font-size:0.85rem;font-weight:600;">
+                <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
+
+        <h3 class="section-title mb-1"><i class="bi bi-person-gear me-2" style="color:var(--gold);"></i>Edit Profile</h3>
+        <hr class="divider-line mb-4">
+
+        <!-- ── SECTION 1: Profile Picture ── -->
+        <div class="profile-section mb-4">
+            <div class="profile-section-header">
+                <i class="bi bi-image me-2" style="color:var(--gold);"></i>Profile Picture
+            </div>
+            <div class="profile-section-body">
+                <div class="row g-4 align-items-center">
+                    <div class="col-auto">
+                        <div style="position:relative;">
+                            {% if current_user.profile_pic %}
+                            <img src="{{ current_user.profile_pic }}" id="livePreview"
+                                 style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);box-shadow:0 4px 20px var(--red-glow);"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="user-avatar" style="width:100px;height:100px;font-size:2.5rem;display:none;" id="livePreviewFallback">{{ current_user.username[0]|upper }}</div>
+                            {% else %}
+                            <div class="user-avatar" style="width:100px;height:100px;font-size:2.5rem;" id="livePreviewFallback">{{ current_user.username[0]|upper }}</div>
+                            <img id="livePreview" style="display:none;width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);">
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col">
+                        <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem;">
+                            Paste a direct image URL (JPG, PNG, WebP). You can use profile photos from <strong style="color:var(--gold);">Unsplash</strong>, <strong style="color:var(--gold);">Gravatar</strong>, or any direct image link.
+                        </p>
+                        <form method="POST" action="{{ url_for('edit_profile') }}">
+                            <input type="hidden" name="action" value="update_avatar">
+                            <div class="d-flex gap-2 flex-wrap">
+                                <input type="url" name="avatar_url" id="avatarUrlInput"
+                                       class="form-control"
+                                       style="max-width:380px;"
+                                       placeholder="https://example.com/your-photo.jpg"
+                                       value="{{ current_user.profile_pic or '' }}">
+                                <button type="submit" class="btn btn-primary px-4">
+                                    <i class="bi bi-check-lg me-1"></i>Save Photo
+                                </button>
+                                {% if current_user.profile_pic %}
+                                <button type="button" class="btn" onclick="document.getElementById('avatarUrlInput').value=''; document.getElementById('livePreview').style.display='none'; document.getElementById('livePreviewFallback').style.display='flex';"
+                                        style="background:rgba(200,39,26,0.1);border:1px solid rgba(200,39,26,0.3);color:var(--red);">
+                                    <i class="bi bi-x-lg me-1"></i>Remove
+                                </button>
+                                {% endif %}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── SECTION 2: Personal Info ── -->
+        <div class="profile-section mb-4">
+            <div class="profile-section-header">
+                <i class="bi bi-person-lines-fill me-2" style="color:var(--sky-blue);"></i>Personal Information
+            </div>
+            <div class="profile-section-body">
+                <form method="POST" action="{{ url_for('edit_profile') }}">
+                    <input type="hidden" name="action" value="update_info">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Username</label>
+                            <div style="position:relative;">
+                                <i class="bi bi-person" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);"></i>
+                                <input type="text" name="username" class="form-control ps-4"
+                                       value="{{ current_user.username }}" required
+                                       minlength="3" maxlength="80"
+                                       style="padding-left:2.2rem!important;">
+                            </div>
+                            <small style="color:var(--text-muted);font-size:0.75rem;">3–80 characters</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email Address</label>
+                            <div style="position:relative;">
+                                <i class="bi bi-envelope" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);"></i>
+                                <input type="email" name="email" class="form-control"
+                                       value="{{ current_user.email }}" required
+                                       style="padding-left:2.2rem!important;">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Bio <span style="color:var(--text-muted);font-size:0.72rem;text-transform:none;letter-spacing:0;">(optional · shown on dashboard)</span></label>
+                            <textarea name="bio" class="form-control" rows="3"
+                                      maxlength="300"
+                                      placeholder="Tell us a bit about yourself…">{{ current_user.bio or '' }}</textarea>
+                            <small style="color:var(--text-muted);font-size:0.75rem;">Max 300 characters</small>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary px-5">
+                                <i class="bi bi-check-circle me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ── SECTION 3: Change Password ── -->
+        <div class="profile-section mb-4">
+            <div class="profile-section-header" style="border-left-color:var(--red);">
+                <i class="bi bi-lock-fill me-2" style="color:var(--red);"></i>Change Password
+            </div>
+            <div class="profile-section-body">
+                <form method="POST" action="{{ url_for('edit_profile') }}" id="passwordForm">
+                    <input type="hidden" name="action" value="change_password">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Current Password</label>
+                            <div style="position:relative;">
+                                <i class="bi bi-lock" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);"></i>
+                                <input type="password" name="current_password" class="form-control"
+                                       placeholder="Enter your current password" required
+                                       style="padding-left:2.2rem!important;">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">New Password</label>
+                            <div style="position:relative;">
+                                <i class="bi bi-key" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);"></i>
+                                <input type="password" name="new_password" id="newPw" class="form-control"
+                                       placeholder="Min. 6 characters" required minlength="6"
+                                       style="padding-left:2.2rem!important;"
+                                       oninput="checkPwMatch()">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Confirm New Password</label>
+                            <div style="position:relative;">
+                                <i class="bi bi-key-fill" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);"></i>
+                                <input type="password" name="confirm_password" id="confirmPw" class="form-control"
+                                       placeholder="Repeat new password" required
+                                       style="padding-left:2.2rem!important;"
+                                       oninput="checkPwMatch()">
+                            </div>
+                            <small id="pwMatchMsg" style="font-size:0.75rem;display:none;"></small>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn px-5" style="background:var(--red);border-color:var(--red);color:#fff;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;font-size:0.78rem;">
+                                <i class="bi bi-shield-lock me-2"></i>Update Password
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ── DANGER ZONE ── -->
+        <div class="profile-section" style="border-color:rgba(200,39,26,0.2);">
+            <div class="profile-section-header" style="border-left-color:var(--red);background:rgba(200,39,26,0.06);">
+                <i class="bi bi-exclamation-triangle-fill me-2" style="color:var(--red);"></i>Account Info
+            </div>
+            <div class="profile-section-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div style="background:var(--bg-surface);border-radius:var(--radius-sm);padding:1rem;">
+                            <div style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:4px;">Account Type</div>
+                            <div style="font-family:'Oswald',sans-serif;font-size:1rem;color:{% if current_user.is_admin %}var(--red){% else %}var(--sky-blue){% endif %};">
+                                {% if current_user.is_admin %}<i class="bi bi-shield-fill-check me-1"></i>Administrator{% else %}<i class="bi bi-person-fill me-1"></i>Member{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div style="background:var(--bg-surface);border-radius:var(--radius-sm);padding:1rem;">
+                            <div style="color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:4px;">Bookmarks</div>
+                            <div style="font-family:'Oswald',sans-serif;font-size:1rem;color:var(--gold);">
+                                <i class="bi bi-star-fill me-1"></i>{{ current_user.bookmarks|length }} articles saved
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.profile-section {
+    background: var(--bg-card);
+    border: 1px solid var(--navy-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+.profile-section-header {
+    padding: 1rem 1.5rem;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--navy-border);
+    border-left: 3px solid var(--gold);
+    font-family: 'Oswald', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+.profile-section-body { padding: 1.75rem 1.5rem; }
+</style>
+
+<script>
+// Live avatar preview
+document.getElementById('avatarUrlInput')?.addEventListener('input', function() {
+    const url = this.value.trim();
+    const preview = document.getElementById('livePreview');
+    const fallback = document.getElementById('livePreviewFallback');
+    if (url) {
+        preview.src = url;
+        preview.style.display = 'block';
+        if (fallback) fallback.style.display = 'none';
+        preview.onerror = function() {
+            this.style.display = 'none';
+            if (fallback) fallback.style.display = 'flex';
+        };
+    } else {
+        preview.style.display = 'none';
+        if (fallback) fallback.style.display = 'flex';
+    }
+});
+
+// Password match checker
+function checkPwMatch() {
+    const pw  = document.getElementById('newPw').value;
+    const cpw = document.getElementById('confirmPw').value;
+    const msg = document.getElementById('pwMatchMsg');
+    if (!cpw) { msg.style.display = 'none'; return; }
+    if (pw === cpw) {
+        msg.textContent = '✓ Passwords match';
+        msg.style.color = '#52c47a';
+        msg.style.display = 'block';
+    } else {
+        msg.textContent = '✗ Passwords do not match';
+        msg.style.color = '#e05252';
+        msg.style.display = 'block';
+    }
+}
+</script>
+{% endblock %}

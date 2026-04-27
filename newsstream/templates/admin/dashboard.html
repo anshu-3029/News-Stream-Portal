@@ -1,0 +1,361 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- STAT CARDS -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-mini">
+            <div class="stat-mini-icon" style="background:rgba(200,39,26,0.12);">
+                <i class="bi bi-newspaper" style="color:var(--red);"></i>
+            </div>
+            <div>
+                <div class="stat-mini-val" style="color:var(--red);">{{ stats.total }}</div>
+                <div class="stat-mini-label">Total Articles</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-mini">
+            <div class="stat-mini-icon" style="background:rgba(240,165,0,0.12);">
+                <i class="bi bi-pencil-square" style="color:var(--gold);"></i>
+            </div>
+            <div>
+                <div class="stat-mini-val" style="color:var(--gold);">{{ stats.admin }}</div>
+                <div class="stat-mini-label">Admin Posts</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-mini">
+            <div class="stat-mini-icon" style="background:rgba(30,127,196,0.12);">
+                <i class="bi bi-rss" style="color:var(--sky-blue);"></i>
+            </div>
+            <div>
+                <div class="stat-mini-val" style="color:var(--sky-blue);">{{ stats.api }}</div>
+                <div class="stat-mini-label">API News</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-mini">
+            <div class="stat-mini-icon" style="background:rgba(200,39,26,0.08);">
+                <i class="bi bi-eye-slash" style="color:var(--red);"></i>
+            </div>
+            <div>
+                <div class="stat-mini-val" style="color:var(--red);">{{ stats.pending }}</div>
+                <div class="stat-mini-label">Rejected</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-mini">
+            <div class="stat-mini-icon" style="background:rgba(82,196,122,0.12);">
+                <i class="bi bi-people" style="color:#52c47a;"></i>
+            </div>
+            <div>
+                <div class="stat-mini-val" style="color:#52c47a;">{{ stats.users }}</div>
+                <div class="stat-mini-label">Users</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="stat-mini">
+            <div class="stat-mini-icon" style="background:rgba(155,126,248,0.12);">
+                <i class="bi bi-bookmark-fill" style="color:#9b7ef8;"></i>
+            </div>
+            <div>
+                <div class="stat-mini-val" style="color:#9b7ef8;">{{ stats.bookmarks }}</div>
+                <div class="stat-mini-label">Bookmarks</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{{ url_for('admin_comments', status='pending') }}" style="text-decoration:none;">
+        <div class="stat-mini" style="{{ 'border:1px solid rgba(240,165,0,0.35);' if stats.pending_comments > 0 else '' }}">
+            <div class="stat-mini-icon" style="background:rgba(240,165,0,0.12);">
+                <i class="bi bi-chat-dots-fill" style="color:var(--gold);"></i>
+            </div>
+            <div>
+                <div class="stat-mini-val" style="color:var(--gold);">{{ stats.pending_comments }}</div>
+                <div class="stat-mini-label">Pending Cmts</div>
+            </div>
+        </div>
+        </a>
+    </div>
+    {% if current_user.is_super_admin %}
+    <div class="col-6 col-md-4 col-lg-2">
+        <a href="{{ url_for('admin_queries') }}" style="text-decoration:none;">
+        <div class="stat-mini" style="{{ 'border:1px solid rgba(200,39,26,0.3);' if stats.unread_queries > 0 else '' }}">
+            <div class="stat-mini-icon" style="background:rgba(200,39,26,0.12);">
+                <i class="bi bi-envelope-fill" style="color:var(--red);"></i>
+            </div>
+            <div>
+                <div class="stat-mini-val" style="color:var(--red);">{{ stats.unread_queries }}</div>
+                <div class="stat-mini-label">Unread Msgs</div>
+            </div>
+        </div>
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ROLE BANNER for sub-admins -->
+{% if not current_user.is_super_admin %}
+<div style="background:linear-gradient(135deg,rgba(240,165,0,0.08),rgba(240,165,0,0.03));border:1px solid rgba(240,165,0,0.2);border-left:3px solid var(--gold);border-radius:var(--radius);padding:0.85rem 1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:12px;">
+    <i class="bi bi-shield-fill" style="color:var(--gold);font-size:1.2rem;flex-shrink:0;"></i>
+    <div>
+        <div style="font-family:'Oswald',sans-serif;font-size:0.88rem;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:0.04em;">Sub-Admin Account</div>
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:1px;">
+            You can manage all content, API news, and users. Contact Queries and Admin Management are restricted to the Super Admin.
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- QUICK ACTIONS -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div style="background:var(--bg-card);border:1px solid var(--navy-border);border-radius:var(--radius);padding:1.25rem 1.5rem;">
+            <div style="font-family:'Oswald',sans-serif;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);margin-bottom:1rem;">Quick Actions</div>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ url_for('admin_add_news') }}" class="btn btn-primary btn-sm px-3">
+                    <i class="bi bi-plus-lg me-1"></i>Write Article
+                </a>
+                <!-- Fetch API for each category -->
+                {% for cat in categories %}
+                <form method="POST" action="{{ url_for('admin_fetch_api') }}" style="display:inline;">
+                    <input type="hidden" name="category" value="{{ cat }}">
+                    <button type="submit" class="btn btn-sm"
+                            style="background:rgba(30,127,196,0.1);border:1px solid rgba(30,127,196,0.2);color:var(--sky-blue);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;">
+                        <i class="bi bi-cloud-download me-1"></i>{{ cat|title }}
+                    </button>
+                </form>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="admin-filter-bar">
+    <form method="GET" action="{{ url_for('admin') }}" class="d-flex flex-wrap gap-2 align-items-center w-100" id="filterForm">
+        <span style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-right:4px;">
+            <i class="bi bi-funnel me-1"></i>Filter
+        </span>
+        <select name="category" class="filter-select" onchange="document.getElementById('filterForm').submit()">
+            <option value="all" {{ 'selected' if filter_cat=='all' }}>All Categories</option>
+            {% for cat in categories %}
+            <option value="{{ cat }}" {{ 'selected' if filter_cat==cat }}>{{ cat|title }}</option>
+            {% endfor %}
+        </select>
+        <select name="type" class="filter-select" onchange="document.getElementById('filterForm').submit()">
+            <option value="all"   {{ 'selected' if filter_type=='all' }}>All Types</option>
+            <option value="admin" {{ 'selected' if filter_type=='admin' }}>Admin Posts</option>
+            <option value="api"   {{ 'selected' if filter_type=='api' }}>API News</option>
+        </select>
+        <select name="status" class="filter-select" onchange="document.getElementById('filterForm').submit()">
+            <option value="all"      {{ 'selected' if filter_status=='all' }}>All Status</option>
+            <option value="approved" {{ 'selected' if filter_status=='approved' }}>Approved</option>
+            <option value="rejected" {{ 'selected' if filter_status=='rejected' }}>Rejected</option>
+        </select>
+        <span style="margin-left:auto;color:var(--text-muted);font-size:0.78rem;">
+            {{ pagination.total }} articles
+        </span>
+    </form>
+</div>
+
+<!-- BULK ACTIONS + TABLE -->
+<form method="POST" action="{{ url_for('admin_bulk_action') }}" id="bulkForm">
+    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+        <select name="bulk_action" class="filter-select">
+            <option value="">Bulk Action…</option>
+            <option value="approve">Approve Selected</option>
+            <option value="reject">Reject Selected</option>
+            <option value="feature">Mark as Featured</option>
+            <option value="unfeature">Unmark Featured</option>
+            <option value="delete">Delete Selected</option>
+        </select>
+        <button type="submit" class="btn btn-sm"
+                style="background:rgba(200,39,26,0.1);border:1px solid rgba(200,39,26,0.25);color:var(--red);font-weight:700;font-size:0.75rem;"
+                onclick="return confirm('Apply bulk action to selected articles?')">
+            <i class="bi bi-check2-all me-1"></i>Apply
+        </button>
+        <button type="button" class="btn btn-sm"
+                style="background:rgba(255,255,255,0.05);border:1px solid var(--navy-border);color:var(--text-secondary);font-size:0.75rem;"
+                onclick="toggleAll(this)">
+            <i class="bi bi-check-square me-1"></i>Select All
+        </button>
+    </div>
+
+    <div class="admin-news-table">
+        {% if news %}
+        <div class="table-responsive">
+            <table class="table ant mb-0">
+                <thead>
+                    <tr>
+                        <th width="36"><input type="checkbox" class="form-check-input" id="checkAll" onchange="toggleAll(this)"></th>
+                        <th width="60">Image</th>
+                        <th>Title</th>
+                        <th width="100">Category</th>
+                        <th width="90">Type</th>
+                        <th width="90">Status</th>
+                        <th width="110">Date</th>
+                        <th width="130">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for article in news %}
+                    <tr>
+                        <td><input type="checkbox" class="form-check-input row-check" name="selected_ids" value="{{ article.id }}"></td>
+                        <td>
+                            {% if article.image_url %}
+                            <img src="{{ article.image_url }}" class="news-thumb" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <div class="news-thumb-placeholder" style="display:none;"><i class="bi bi-image"></i></div>
+                            {% else %}
+                            <div class="news-thumb-placeholder"><i class="bi bi-image"></i></div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="max-width:320px;">
+                                <a href="{{ article.url or '#' }}" target="_blank"
+                                   style="color:var(--text-primary);font-weight:600;font-size:0.84rem;line-height:1.4;display:block;"
+                                   title="{{ article.title }}">
+                                    {{ article.title[:75] }}{% if article.title|length > 75 %}…{% endif %}
+                                </a>
+                                <small style="color:var(--text-muted);">{{ article.source or '—' }}</small>
+                                {% if article.is_featured %}
+                                <span style="font-size:0.62rem;background:rgba(240,165,0,0.15);border:1px solid rgba(240,165,0,0.3);color:var(--gold);padding:0.1rem 0.4rem;border-radius:3px;margin-left:4px;">⭐ FEATURED</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ article.category|title }}</span>
+                        </td>
+                        <td>
+                            {% if article.is_admin_post %}
+                            <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">
+                                <span class="status-dot dot-admin"></span>Admin
+                            </span>
+                            {% else %}
+                            <span style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--sky-blue);">
+                                <span class="status-dot dot-api"></span>API
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if article.is_approved %}
+                            <span style="font-size:0.7rem;font-weight:700;color:#52c47a;">
+                                <span class="status-dot dot-approved"></span>Live
+                            </span>
+                            {% else %}
+                            <span style="font-size:0.7rem;font-weight:700;color:var(--red);">
+                                <span class="status-dot dot-rejected"></span>Hidden
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td style="color:var(--text-muted);font-size:0.75rem;">
+                            {% if article.published_at %}{{ article.published_at.strftime('%d %b %Y') }}{% else %}—{% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1 flex-wrap">
+                                <!-- Edit (admin posts only) -->
+                                {% if article.is_admin_post %}
+                                <a href="{{ url_for('admin_edit_news', news_id=article.id) }}" class="btn-action btn-edit" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% endif %}
+
+                                <!-- Approve / Reject -->
+                                {% if not article.is_approved %}
+                                <form method="POST" action="{{ url_for('admin_approve_news', news_id=article.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn-action btn-approve" title="Approve — show on feed">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                </form>
+                                {% else %}
+                                <form method="POST" action="{{ url_for('admin_reject_news', news_id=article.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn-action btn-reject" title="Reject — hide from feed">
+                                        <i class="bi bi-eye-slash"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                <!-- Feature toggle -->
+                                <form method="POST" action="{{ url_for('admin_feature_news', news_id=article.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn-action btn-feature" title="{{ 'Unfeature' if article.is_featured else 'Feature' }}">
+                                        <i class="bi bi-{{ 'star-fill' if article.is_featured else 'star' }}"></i>
+                                    </button>
+                                </form>
+
+                                <!-- Delete -->
+                                <form method="POST" action="{{ url_for('admin_delete_news', news_id=article.id) }}" style="display:inline;"
+                                      onsubmit="return confirm('Delete this article permanently?')">
+                                    <button type="submit" class="btn-action btn-delete" title="Delete">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PAGINATION -->
+        {% if pagination.has_prev or pagination.has_next %}
+        <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-top:1px solid var(--navy-border);">
+            <small style="color:var(--text-muted);">
+                Page {{ pagination.page }} of {{ pagination.pages }} &nbsp;·&nbsp; {{ pagination.total }} articles
+            </small>
+            <nav>
+                <ul class="pagination pagination-dark mb-0" style="gap:3px;">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ pagination.prev_num }}&category={{ filter_cat }}&type={{ filter_type }}&status={{ filter_status }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% for p in pagination.iter_pages(left_edge=1, right_edge=1) %}
+                        {% if p %}
+                        <li class="page-item {{ 'active' if p == pagination.page else '' }}">
+                            <a class="page-link" href="?page={{ p }}&category={{ filter_cat }}&type={{ filter_type }}&status={{ filter_status }}">{{ p }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ pagination.next_num }}&category={{ filter_cat }}&type={{ filter_type }}&status={{ filter_status }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-inbox" style="font-size:2.5rem;color:var(--text-muted);"></i>
+            <p class="mt-3" style="color:var(--text-secondary);">No articles match this filter.</p>
+        </div>
+        {% endif %}
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleAll(src) {
+    const checks = document.querySelectorAll('.row-check');
+    checks.forEach(c => c.checked = document.getElementById('checkAll').checked);
+}
+</script>
+{% endblock %}

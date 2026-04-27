@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Panel{% endblock %} — NewsStream</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* ── ADMIN LAYOUT ── */
+        :root {
+            --admin-sidebar: 260px;
+            --admin-header:  60px;
+        }
+
+        body { overflow-x: hidden; }
+
+        /* TOP HEADER BAR */
+        .admin-topbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: var(--admin-header);
+            background: #080f1c;
+            border-bottom: 2px solid var(--red);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem 0 calc(var(--admin-sidebar) + 1.5rem);
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(200,39,26,0.2);
+        }
+
+        .admin-topbar-brand {
+            position: fixed;
+            left: 0; top: 0;
+            width: var(--admin-sidebar);
+            height: var(--admin-header);
+            display: flex;
+            align-items: center;
+            padding: 0 1.25rem;
+            gap: 2px;
+            background: #050c18;
+            border-bottom: 2px solid var(--red);
+            border-right: 1px solid rgba(200,39,26,0.2);
+        }
+
+        .admin-topbar-brand img { height: 42px; border-radius: 5px; background: #0a1020; padding: 2px 4px; }
+
+        .admin-topbar-brand .brand-news   { font-family: 'Oswald',sans-serif; font-size: 1.25rem; font-weight: 700; color: #3a8fd4; }
+        .admin-topbar-brand .brand-stream { font-family: 'Oswald',sans-serif; font-size: 1.25rem; font-weight: 700; color: #d42a1a; }
+        .admin-topbar-brand .admin-badge  {
+            font-size: 0.58rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.08em; background: var(--red); color: #fff;
+            padding: 0.15rem 0.45rem; border-radius: 3px; margin-left: 6px;
+            align-self: flex-end; margin-bottom: 4px;
+        }
+
+        .topbar-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1rem; font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase; letter-spacing: 0.06em;
+        }
+
+        .topbar-actions { display: flex; align-items: center; gap: 12px; }
+
+        .topbar-user {
+            display: flex; align-items: center; gap: 10px;
+            color: var(--text-secondary); font-size: 0.85rem; font-weight: 600;
+        }
+
+        .topbar-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--red), var(--gold));
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Oswald', sans-serif; font-size: 0.85rem; font-weight: 700; color: #fff;
+        }
+
+        /* SIDEBAR */
+        .admin-sidebar {
+            position: fixed;
+            top: var(--admin-header);
+            left: 0;
+            width: var(--admin-sidebar);
+            height: calc(100vh - var(--admin-header));
+            background: #060d1a;
+            border-right: 1px solid rgba(255,255,255,0.05);
+            overflow-y: auto;
+            z-index: 999;
+        }
+
+        .admin-sidebar::-webkit-scrollbar { width: 3px; }
+        .admin-sidebar::-webkit-scrollbar-thumb { background: var(--red); }
+
+        .sidebar-section-label {
+            font-size: 0.62rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--text-light);
+            padding: 1.25rem 1.25rem 0.4rem;
+        }
+
+        .admin-nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 0.7rem 1.25rem;
+            color: var(--text-secondary);
+            font-size: 0.84rem; font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition);
+            border-left: 3px solid transparent;
+            position: relative;
+        }
+
+        .admin-nav-item:hover {
+            color: var(--text-primary);
+            background: rgba(255,255,255,0.04);
+            border-left-color: var(--gold);
+        }
+
+        .admin-nav-item.active {
+            color: var(--gold);
+            background: rgba(240,165,0,0.08);
+            border-left-color: var(--gold);
+        }
+
+        .admin-nav-item i { font-size: 1rem; width: 18px; text-align: center; }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--red);
+            color: #fff;
+            font-size: 0.6rem; font-weight: 700;
+            padding: 0.15rem 0.45rem;
+            border-radius: 99px;
+            min-width: 18px; text-align: center;
+        }
+
+        .nav-badge.gold { background: var(--gold); color: #000; }
+
+        /* MAIN CONTENT */
+        .admin-main {
+            margin-left: var(--admin-sidebar);
+            padding-top: var(--admin-header);
+            min-height: 100vh;
+            background: var(--bg);
+        }
+
+        .admin-content { padding: 1.75rem 2rem; }
+
+        /* PAGE HEADER */
+        .admin-page-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1rem;
+        }
+
+        .admin-page-title {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.6rem; font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .admin-page-title span { color: var(--gold); }
+
+        /* STAT CARDS */
+        .stat-mini {
+            background: var(--bg-card);
+            border: 1px solid var(--navy-border);
+            border-radius: var(--radius);
+            padding: 1.25rem 1.5rem;
+            display: flex; align-items: center; gap: 1rem;
+            transition: var(--transition);
+        }
+
+        .stat-mini:hover { border-color: rgba(200,39,26,0.25); transform: translateY(-2px); }
+
+        .stat-mini-icon {
+            width: 46px; height: 46px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; flex-shrink: 0;
+        }
+
+        .stat-mini-val {
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.8rem; line-height: 1;
+            font-weight: 700;
+        }
+
+        .stat-mini-label {
+            font-size: 0.72rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--text-muted); margin-top: 2px;
+        }
+
+        /* FILTER BAR */
+        .admin-filter-bar {
+            background: var(--bg-card);
+            border: 1px solid var(--navy-border);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.25rem;
+            display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+        }
+
+        .filter-select {
+            background: var(--bg-surface) !important;
+            border: 1px solid var(--navy-border) !important;
+            color: var(--text-primary) !important;
+            border-radius: 6px !important;
+            padding: 0.4rem 0.85rem !important;
+            font-size: 0.82rem; font-weight: 600;
+            cursor: pointer;
+        }
+
+        .filter-select:focus { border-color: var(--red) !important; outline: none; }
+        .filter-select option { background: var(--bg-surface); }
+
+        /* NEWS TABLE */
+        .admin-news-table {
+            background: var(--bg-card);
+            border: 1px solid var(--navy-border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .ant thead th {
+            background: #060d1a;
+            color: var(--text-muted);
+            font-size: 0.65rem; text-transform: uppercase;
+            letter-spacing: 0.08em; font-weight: 700;
+            border-bottom: 1px solid rgba(200,39,26,0.2);
+            padding: 0.85rem 1rem;
+            white-space: nowrap;
+        }
+
+        .ant tbody td {
+            border-bottom: 1px solid var(--navy-border);
+            padding: 0.75rem 1rem;
+            vertical-align: middle;
+            font-size: 0.85rem; color: var(--text-primary);
+        }
+
+        .ant tbody tr:hover { background: rgba(255,255,255,0.02); }
+        .ant tbody tr:last-child td { border-bottom: none; }
+
+        .news-thumb {
+            width: 52px; height: 40px;
+            object-fit: cover; border-radius: 5px;
+            border: 1px solid var(--navy-border);
+        }
+
+        .news-thumb-placeholder {
+            width: 52px; height: 40px;
+            background: var(--bg-surface); border-radius: 5px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-muted); font-size: 1rem;
+            border: 1px solid var(--navy-border);
+        }
+
+        /* ACTION BUTTONS */
+        .btn-action {
+            width: 30px; height: 30px;
+            border-radius: 6px;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 0.8rem;
+            transition: var(--transition);
+            border: 1px solid transparent;
+        }
+
+        .btn-edit    { background: rgba(30,127,196,0.12); border-color: rgba(30,127,196,0.25); color: var(--sky-blue); }
+        .btn-delete  { background: rgba(200,39,26,0.12);  border-color: rgba(200,39,26,0.25);  color: var(--red); }
+        .btn-approve { background: rgba(82,196,122,0.12); border-color: rgba(82,196,122,0.25); color: #52c47a; }
+        .btn-reject  { background: rgba(200,39,26,0.08);  border-color: rgba(200,39,26,0.2);   color: var(--red); }
+        .btn-feature { background: rgba(240,165,0,0.12);  border-color: rgba(240,165,0,0.25);  color: var(--gold); }
+
+        .btn-action:hover { transform: scale(1.12); }
+
+        /* STATUS DOTS */
+        .status-dot {
+            display: inline-block;
+            width: 7px; height: 7px;
+            border-radius: 50%; margin-right: 5px;
+        }
+
+        .dot-approved { background: #52c47a; box-shadow: 0 0 5px rgba(82,196,122,0.5); }
+        .dot-rejected { background: var(--red); }
+        .dot-api      { background: var(--sky-blue); }
+        .dot-admin    { background: var(--gold); }
+
+        /* FORM STYLES */
+        .admin-form-card {
+            background: var(--bg-card);
+            border: 1px solid var(--navy-border);
+            border-radius: var(--radius);
+            padding: 2rem;
+        }
+
+        .admin-form-section {
+            border-left: 3px solid var(--gold);
+            padding-left: 1rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .admin-form-section h6 {
+            font-family: 'Oswald', sans-serif;
+            font-size: 0.9rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--text-secondary); margin-bottom: 1rem;
+        }
+
+        /* CHECKBOX COLUMN */
+        .form-check-input { background-color: var(--bg-surface); border-color: var(--navy-border); }
+        .form-check-input:checked { background-color: var(--red); border-color: var(--red); }
+
+        /* ALERTS */
+        .alert { font-size: 0.88rem; font-weight: 500; border-radius: 8px !important; }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .admin-sidebar  { transform: translateX(-100%); }
+            .admin-main     { margin-left: 0; }
+            .admin-topbar   { padding-left: 1.5rem; }
+            .admin-topbar-brand { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOP BAR BRAND -->
+<div class="admin-topbar-brand">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="NS">
+    <span class="brand-news">News</span><span class="brand-stream">Stream</span>
+    <span class="admin-badge">Admin</span>
+</div>
+
+<!-- TOP BAR -->
+<div class="admin-topbar">
+    <div class="topbar-title">
+        <i class="bi bi-grid-3x3-gap me-2" style="color:var(--gold);"></i>
+        {% block page_title %}Dashboard{% endblock %}
+    </div>
+    <div class="topbar-actions">
+        <a href="{{ url_for('index') }}" class="btn btn-sm" target="_blank"
+           style="background:rgba(240,165,0,0.1);border:1px solid rgba(240,165,0,0.25);color:var(--gold);font-size:0.75rem;font-weight:700;">
+            <i class="bi bi-box-arrow-up-right me-1"></i>View Site
+        </a>
+        <div class="topbar-user">
+            <div class="topbar-avatar">{{ current_user.username[0]|upper }}</div>
+            <span style="color:var(--text-primary);">{{ current_user.username }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="admin-sidebar">
+
+    <!-- ── OVERVIEW ── -->
+    <div class="sidebar-section-label">Overview</div>
+    <a href="{{ url_for('admin') }}" class="admin-nav-item {{ 'active' if request.endpoint == 'admin' else '' }}">
+        <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+
+    <!-- ── CONTENT (all admins) ── -->
+    <div class="sidebar-section-label">Content</div>
+    <a href="{{ url_for('admin_add_news') }}" class="admin-nav-item {{ 'active' if request.endpoint == 'admin_add_news' else '' }}">
+        <i class="bi bi-plus-circle"></i> Add Article
+    </a>
+    <a href="{{ url_for('admin') }}?type=admin" class="admin-nav-item">
+        <i class="bi bi-pencil-square"></i> My Articles
+    </a>
+    <a href="{{ url_for('admin') }}?type=api" class="admin-nav-item">
+        <i class="bi bi-rss"></i> API News
+    </a>
+    <a href="{{ url_for('admin') }}?status=rejected" class="admin-nav-item">
+        <i class="bi bi-eye-slash"></i> Rejected
+        {% if stats is defined and stats.pending > 0 %}
+        <span class="nav-badge">{{ stats.pending }}</span>
+        {% endif %}
+    </a>
+    <a href="{{ url_for('admin_comments') }}" class="admin-nav-item {{ 'active' if request.endpoint in ['admin_comments'] else '' }}">
+        <i class="bi bi-chat-dots"></i> Comments
+        {% if pending_comments is defined and pending_comments > 0 %}
+        <span class="nav-badge gold">{{ pending_comments }}</span>
+        {% endif %}
+    </a>
+
+    <!-- ── API CONTROL (all admins) ── -->
+    <div class="sidebar-section-label">API Control</div>
+    {% for cat in ['general','technology','sports','business','entertainment','health','science'] %}
+    <a href="{{ url_for('admin') }}?category={{ cat }}" class="admin-nav-item" style="padding-top:0.5rem;padding-bottom:0.5rem;">
+        <i class="bi bi-tag" style="font-size:0.8rem;"></i>
+        <span style="font-size:0.78rem;">{{ cat|title }}</span>
+    </a>
+    {% endfor %}
+
+    <!-- ── USERS (all admins) ── -->
+    <div class="sidebar-section-label">Users</div>
+    <a href="{{ url_for('admin_users') }}" class="admin-nav-item {{ 'active' if request.endpoint == 'admin_users' else '' }}">
+        <i class="bi bi-people"></i> Manage Users
+    </a>
+
+    <!-- ── SUPER ADMIN ONLY SECTION ── -->
+    {% if current_user.is_super_admin %}
+    <div class="sidebar-section-label" style="color:var(--gold);margin-top:0.5rem;">
+        <i class="bi bi-star-fill me-1" style="font-size:0.55rem;"></i>Super Admin
+    </div>
+
+    <a href="{{ url_for('admin_queries') }}" class="admin-nav-item {{ 'active' if request.endpoint in ['admin_queries','admin_view_query'] else '' }}"
+       style="border-left-color:var(--gold) !important;">
+        <i class="bi bi-envelope" style="color:var(--gold);"></i>
+        <span style="color:var(--gold);">Contact Queries</span>
+        {% if unread_count is defined and unread_count > 0 %}
+        <span class="nav-badge gold">{{ unread_count }}</span>
+        {% endif %}
+    </a>
+
+    <a href="{{ url_for('admin_manage_admins') }}" class="admin-nav-item {{ 'active' if request.endpoint == 'admin_manage_admins' else '' }}"
+       style="border-left-color:var(--gold) !important;">
+        <i class="bi bi-shield-star" style="color:var(--gold);"></i>
+        <span style="color:var(--gold);">Manage Admins</span>
+    </a>
+    {% endif %}
+
+    <!-- ── ACCOUNT ── -->
+    <div class="sidebar-section-label">Account</div>
+    <a href="{{ url_for('dashboard') }}" class="admin-nav-item">
+        <i class="bi bi-person-circle"></i> My Profile
+    </a>
+    <a href="{{ url_for('admin_logout') }}" class="admin-nav-item" style="color:var(--red)!important;border-left-color:transparent;">
+        <i class="bi bi-box-arrow-right"></i> Logout
+    </a>
+</aside>
+
+<!-- MAIN -->
+<main class="admin-main">
+    <div class="admin-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show mb-3">
+                    <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

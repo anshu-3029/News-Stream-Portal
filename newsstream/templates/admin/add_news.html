@@ -1,0 +1,129 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Add Article{% endblock %}
+{% block page_title %}Write New Article{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <h2 class="admin-page-title"><span>+</span> New Article</h2>
+    <a href="{{ url_for('admin') }}" class="btn btn-sm"
+       style="background:rgba(255,255,255,0.05);border:1px solid var(--navy-border);color:var(--text-secondary);font-size:0.78rem;">
+        <i class="bi bi-arrow-left me-1"></i>Back
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="admin-form-card">
+            <form method="POST" action="{{ url_for('admin_add_news') }}">
+
+                <div class="admin-form-section">
+                    <h6><i class="bi bi-type me-2"></i>Article Content</h6>
+                    <div class="mb-3">
+                        <label class="form-label">Headline *</label>
+                        <input type="text" name="title" class="form-control"
+                               placeholder="Write a compelling headline…" required maxlength="200">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Body / Description</label>
+                        <textarea name="description" class="form-control" rows="6"
+                                  placeholder="Write the full article content or summary here…"></textarea>
+                    </div>
+                </div>
+
+                <div class="admin-form-section" style="border-left-color:var(--sky-blue);">
+                    <h6 style="color:var(--sky-blue);"><i class="bi bi-link-45deg me-2"></i>Source & Media</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Source Name</label>
+                            <input type="text" name="source" class="form-control"
+                                   placeholder="e.g. BBC, Reuters, NewsStream" value="NewsStream Editorial">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Source URL</label>
+                            <input type="url" name="url" class="form-control" placeholder="https://…">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Cover Image URL</label>
+                            <input type="url" name="image_url" class="form-control"
+                                   placeholder="https://…/image.jpg" id="imageUrlInput">
+                            <div id="imgPreviewBox" class="mt-2" style="display:none;">
+                                <img id="imgPreview" style="max-height:140px;border-radius:8px;border:1px solid var(--navy-border);">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-form-section" style="border-left-color:var(--red);">
+                    <h6 style="color:var(--red);"><i class="bi bi-tags me-2"></i>Classification</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Category *</label>
+                            <select name="category" class="form-select" required>
+                                {% for cat in categories %}
+                                <option value="{{ cat }}">{{ cat|title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="is_featured" id="isFeatured" value="1">
+                                <label class="form-check-label" for="isFeatured" style="color:var(--gold);font-weight:600;font-size:0.88rem;">
+                                    <i class="bi bi-star-fill me-1"></i>Feature this article (show in hero carousel)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-5">
+                        <i class="bi bi-send me-2"></i>Publish Article
+                    </button>
+                    <a href="{{ url_for('admin') }}" class="btn"
+                       style="background:var(--bg-surface);border:1px solid var(--navy-border);color:var(--text-secondary);">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TIPS SIDEBAR -->
+    <div class="col-lg-4">
+        <div style="background:var(--bg-card);border:1px solid var(--navy-border);border-radius:var(--radius);padding:1.5rem;">
+            <h6 style="font-family:'Oswald',sans-serif;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--gold);margin-bottom:1rem;">
+                <i class="bi bi-lightbulb me-2"></i>Tips
+            </h6>
+            {% for tip in [
+                ('bi-check-circle','Headlines perform best at 60–80 characters.'),
+                ('bi-check-circle','Add a cover image URL for better engagement.'),
+                ('bi-check-circle','Feature articles appear in the hero carousel.'),
+                ('bi-check-circle','Admin articles are always approved & shown.'),
+                ('bi-check-circle','Choose the right category for discoverability.'),
+            ] %}
+            <div class="d-flex gap-2 mb-2" style="font-size:0.82rem;color:var(--text-secondary);">
+                <i class="bi {{ tip[0] }}" style="color:#52c47a;flex-shrink:0;margin-top:2px;"></i>
+                <span>{{ tip[1] }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('imageUrlInput')?.addEventListener('input', function() {
+    const url = this.value.trim();
+    const box = document.getElementById('imgPreviewBox');
+    const img = document.getElementById('imgPreview');
+    if (url) {
+        img.src = url;
+        box.style.display = 'block';
+        img.onerror = () => box.style.display = 'none';
+    } else {
+        box.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

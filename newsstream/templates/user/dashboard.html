@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — NewsStream{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+    <!-- SIDEBAR -->
+    <div class="col-lg-3 col-md-4">
+        <div class="user-sidebar">
+            <div class="p-4 text-center" style="border-bottom:1px solid var(--navy-border);background:linear-gradient(160deg,var(--bg-surface),var(--bg-card));">
+                <div class="mb-3" style="position:relative;display:inline-block;">
+                    {% if current_user.profile_pic %}
+                    <img src="{{ current_user.profile_pic }}"
+                         style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);box-shadow:0 4px 20px var(--red-glow);"
+                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <div class="user-avatar" style="display:none;">{{ current_user.username[0]|upper }}</div>
+                    {% else %}
+                    <div class="user-avatar">{{ current_user.username[0]|upper }}</div>
+                    {% endif %}
+                    <a href="{{ url_for('edit_profile') }}"
+                       style="position:absolute;bottom:0;right:0;width:26px;height:26px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg-card);" title="Edit Profile">
+                        <i class="bi bi-pencil-fill" style="color:#fff;font-size:0.55rem;"></i>
+                    </a>
+                </div>
+                <h6 class="fw-bold mb-1" style="font-family:'Oswald',sans-serif;font-size:1.1rem;">{{ current_user.username }}</h6>
+                <small style="color:var(--text-muted);font-size:0.78rem;">{{ current_user.email }}</small>
+                {% if current_user.bio %}<p style="color:var(--text-secondary);font-size:0.8rem;margin-top:8px;margin-bottom:0;font-style:italic;">"{{ current_user.bio }}"</p>{% endif %}
+                {% if current_user.is_admin %}
+                <div class="mt-2"><span style="background:rgba(200,39,26,0.15);border:1px solid rgba(200,39,26,0.3);color:var(--red);font-size:0.65rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:4px;text-transform:uppercase;letter-spacing:0.06em;"><i class="bi bi-shield-fill-check me-1"></i>Admin</span></div>
+                {% endif %}
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('dashboard') }}" class="sidebar-nav-item active"><i class="bi bi-grid"></i> Dashboard</a>
+                <a href="{{ url_for('edit_profile') }}" class="sidebar-nav-item"><i class="bi bi-person-gear"></i> Edit Profile</a>
+                <a href="{{ url_for('index') }}" class="sidebar-nav-item"><i class="bi bi-house-door"></i> News Feed</a>
+                <a href="{{ url_for('about') }}" class="sidebar-nav-item"><i class="bi bi-info-circle"></i> About</a>
+                <a href="{{ url_for('contact') }}" class="sidebar-nav-item"><i class="bi bi-envelope"></i> Contact</a>
+                {% if current_user.is_admin %}<a href="{{ url_for('admin') }}" class="sidebar-nav-item" style="color:var(--red)!important;"><i class="bi bi-shield-check"></i> Admin Panel</a>{% endif %}
+                <a href="{{ url_for('logout') }}" class="sidebar-nav-item" style="color:var(--red)!important;"><i class="bi bi-box-arrow-right"></i> Logout</a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="col-lg-9 col-md-8">
+
+        <!-- STATS: 2 equal cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-6">
+                <div class="stats-card text-center h-100" style="border-top:3px solid var(--gold);padding:1.75rem 1rem;">
+                    <div class="stat-number">{{ bookmarks|length }}</div>
+                    <div style="color:var(--text-secondary);font-size:0.78rem;margin-top:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">
+                        <i class="bi bi-star-fill me-1" style="color:var(--gold);"></i>Saved Articles
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="stats-card text-center h-100" style="border-top:3px solid {% if current_user.is_admin %}var(--red){% else %}var(--sky-blue){% endif %};padding:1.75rem 1rem;">
+                    {% if current_user.is_admin %}
+                    <div style="font-family:'Oswald',sans-serif;font-size:2.2rem;color:var(--red);line-height:1;font-weight:700;"><i class="bi bi-shield-fill-check"></i></div>
+                    <div style="color:var(--text-secondary);font-size:0.78rem;margin-top:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;"><i class="bi bi-shield-check me-1" style="color:var(--red);"></i>Admin Account</div>
+                    {% else %}
+                    <div style="font-family:'Oswald',sans-serif;font-size:2.2rem;color:var(--sky-blue);line-height:1;font-weight:700;"><i class="bi bi-person-check-fill"></i></div>
+                    <div style="color:var(--text-secondary);font-size:0.78rem;margin-top:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;"><i class="bi bi-person me-1" style="color:var(--sky-blue);"></i>Member Account</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- SAVED ARTICLES -->
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h4 class="section-title mb-0"><i class="bi bi-star-fill me-2" style="color:var(--gold);font-size:1rem;"></i>Saved Articles</h4>
+            <span class="badge bg-secondary">{{ bookmarks|length }}</span>
+        </div>
+        <hr class="divider-line">
+
+        {% if bookmarks %}
+        <div class="row g-3">
+            {% for bookmark in bookmarks %}
+            <div class="col-md-6">
+                <div class="card h-100 news-card overflow-hidden" onclick="window.location.href='{{ url_for('news_detail', news_id=bookmark.news.id) }}';" style="cursor:pointer;animation:none;">
+                    {% if bookmark.news.image_url %}
+                    <div style="height:140px;overflow:hidden;"><img src="{{ bookmark.news.image_url }}" alt="{{ bookmark.news.title }}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.style.display='none'"></div>
+                    {% endif %}
+                    <div class="card-body p-3">
+                        <span class="badge bg-secondary mb-2">{{ bookmark.news.category|title }}</span>
+                        <h6 class="card-title mb-2" style="font-size:0.88rem;">{{ bookmark.news.title[:65] }}{% if bookmark.news.title|length > 65 %}…{% endif %}</h6>
+                        <div class="d-flex gap-2 mt-2">
+                            <a href="{{ url_for('news_detail', news_id=bookmark.news.id) }}" class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();">Read</a>
+                            <form method="POST" action="{{ url_for('bookmark_news', news_id=bookmark.news.id) }}" style="display:inline;" onclick="event.stopPropagation();">
+                                <button type="submit" class="btn btn-sm" style="background:rgba(200,39,26,0.1);border:1px solid rgba(200,39,26,0.3);color:var(--red);"><i class="bi bi-trash3"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5" style="background:var(--bg-card);border:1px solid var(--navy-border);border-radius:var(--radius);">
+            <i class="bi bi-star" style="font-size:3rem;color:var(--text-muted);"></i>
+            <h6 class="mt-3" style="color:var(--text-secondary);">No bookmarks yet</h6>
+            <p style="color:var(--text-muted);font-size:0.85rem;">Bookmark articles from the news feed to save them here.</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary btn-sm mt-2">Browse News</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

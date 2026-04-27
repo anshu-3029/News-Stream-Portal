@@ -1,0 +1,166 @@
+{% extends "admin/base_admin.html" %}
+{% block title %}Query #{{ query.id }}{% endblock %}
+{% block page_title %}View Query{% endblock %}
+
+{% block content %}
+<div class="admin-page-header">
+    <div class="d-flex align-items-center gap-3">
+        <a href="{{ url_for('admin_queries') }}" style="color:var(--text-secondary);font-size:0.85rem;font-weight:600;">
+            <i class="bi bi-arrow-left me-1"></i>Back to Queries
+        </a>
+        <span style="color:var(--text-muted);">|</span>
+        <span style="color:var(--text-muted);font-size:0.82rem;">Query #{{ query.id }}</span>
+    </div>
+    <div class="d-flex gap-2">
+        {% if query.is_resolved %}
+        <span style="background:rgba(82,196,122,0.12);border:1px solid rgba(82,196,122,0.25);color:#52c47a;font-size:0.78rem;font-weight:700;padding:0.35rem 0.85rem;border-radius:6px;">
+            <i class="bi bi-check-circle-fill me-1"></i>Resolved
+        </span>
+        {% else %}
+        <span style="background:rgba(240,165,0,0.12);border:1px solid rgba(240,165,0,0.25);color:var(--gold);font-size:0.78rem;font-weight:700;padding:0.35rem 0.85rem;border-radius:6px;">
+            <i class="bi bi-hourglass-split me-1"></i>Pending
+        </span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <!-- LEFT: MESSAGE DETAIL -->
+    <div class="col-lg-8">
+        <div style="background:var(--bg-card);border:1px solid var(--navy-border);border-radius:var(--radius);overflow:hidden;">
+            <!-- Header accent -->
+            <div style="height:3px;background:linear-gradient(90deg,var(--red),var(--gold),transparent);"></div>
+
+            <!-- Sender info -->
+            <div style="padding:1.5rem;border-bottom:1px solid var(--navy-border);display:flex;align-items:center;gap:1rem;">
+                <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--red),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:1.4rem;font-weight:700;color:#fff;flex-shrink:0;">
+                    {{ query.name[0]|upper }}
+                </div>
+                <div style="flex:1;">
+                    <div style="font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;color:var(--text-primary);">
+                        {{ query.name }}
+                        {% if query.user %}
+                        <span style="font-size:0.65rem;font-weight:700;background:rgba(58,143,212,0.12);border:1px solid rgba(58,143,212,0.25);color:var(--sky-blue);padding:0.15rem 0.5rem;border-radius:4px;margin-left:8px;vertical-align:middle;text-transform:uppercase;letter-spacing:0.05em;">
+                            <i class="bi bi-person-check-fill me-1"></i>Registered User
+                        </span>
+                        {% else %}
+                        <span style="font-size:0.65rem;font-weight:700;background:rgba(255,255,255,0.05);border:1px solid var(--navy-border);color:var(--text-muted);padding:0.15rem 0.5rem;border-radius:4px;margin-left:8px;vertical-align:middle;text-transform:uppercase;letter-spacing:0.05em;">
+                            Guest
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div style="color:var(--text-muted);font-size:0.83rem;margin-top:2px;">
+                        <i class="bi bi-envelope me-1"></i>{{ query.email }}
+                        {% if query.user %}
+                        &nbsp;·&nbsp; <i class="bi bi-person me-1"></i>@{{ query.user.username }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                    <div style="font-size:0.8rem;color:var(--text-secondary);font-weight:600;">{{ query.submitted_at.strftime('%d %b %Y') }}</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);">{{ query.submitted_at.strftime('%H:%M') }}</div>
+                </div>
+            </div>
+
+            <!-- Subject -->
+            <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--navy-border);background:rgba(240,165,0,0.04);">
+                <span style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);">Subject</span>
+                <div style="font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;color:var(--gold);margin-top:2px;">
+                    {{ query.subject }}
+                </div>
+            </div>
+
+            <!-- Message body -->
+            <div style="padding:1.75rem 1.5rem;">
+                <span style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);display:block;margin-bottom:0.75rem;">Message</span>
+                <div style="font-size:0.95rem;color:var(--text-primary);line-height:1.8;white-space:pre-wrap;font-family:'Source Sans 3',sans-serif;">{{ query.message }}</div>
+            </div>
+
+            <!-- Admin note (if exists) -->
+            {% if query.admin_note %}
+            <div style="padding:1.25rem 1.5rem;border-top:1px solid var(--navy-border);background:rgba(58,143,212,0.04);">
+                <span style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--sky-blue);display:block;margin-bottom:0.5rem;">
+                    <i class="bi bi-sticky me-1"></i>Admin Note
+                </span>
+                <div style="font-size:0.88rem;color:var(--text-secondary);line-height:1.7;font-style:italic;">{{ query.admin_note }}</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- RIGHT: ACTIONS -->
+    <div class="col-lg-4">
+
+        <!-- RESOLVE / PENDING TOGGLE -->
+        <div style="background:var(--bg-card);border:1px solid var(--navy-border);border-radius:var(--radius);overflow:hidden;margin-bottom:1rem;">
+            <div style="background:#060d1a;border-bottom:1px solid rgba(200,39,26,0.15);padding:0.85rem 1.25rem;">
+                <span style="font-family:'Oswald',sans-serif;font-size:0.85rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-secondary);">
+                    <i class="bi bi-gear me-2" style="color:var(--gold);"></i>Actions
+                </span>
+            </div>
+            <div style="padding:1.25rem;">
+                <form method="POST" action="{{ url_for('admin_resolve_query', query_id=query.id) }}">
+                    <div class="mb-3">
+                        <label style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);display:block;margin-bottom:0.5rem;">
+                            Internal Note (optional)
+                        </label>
+                        <textarea name="admin_note" class="form-control" rows="4"
+                                  placeholder="Add a note about how this was resolved or any action taken…"
+                                  style="font-size:0.85rem;">{{ query.admin_note or '' }}</textarea>
+                    </div>
+                    <button type="submit" class="btn w-100 mb-2"
+                            style="background:{{ 'rgba(200,39,26,0.12)' if query.is_resolved else 'rgba(82,196,122,0.12)' }};border:1px solid {{ 'rgba(200,39,26,0.3)' if query.is_resolved else 'rgba(82,196,122,0.3)' }};color:{{ 'var(--red)' if query.is_resolved else '#52c47a' }};font-weight:700;font-size:0.82rem;">
+                        <i class="bi bi-{{ 'arrow-counterclockwise' if query.is_resolved else 'check-circle' }} me-2"></i>
+                        {{ 'Mark as Pending' if query.is_resolved else 'Mark as Resolved' }}
+                    </button>
+                </form>
+
+                <form method="POST" action="{{ url_for('admin_delete_query', query_id=query.id) }}"
+                      onsubmit="return confirm('Delete this query permanently?')">
+                    <button type="submit" class="btn w-100"
+                            style="background:rgba(200,39,26,0.06);border:1px solid rgba(200,39,26,0.2);color:var(--red);font-weight:700;font-size:0.82rem;">
+                        <i class="bi bi-trash3 me-2"></i>Delete Query
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- QUICK REPLY (mailto link) -->
+        <div style="background:var(--bg-card);border:1px solid var(--navy-border);border-radius:var(--radius);overflow:hidden;margin-bottom:1rem;">
+            <div style="background:#060d1a;border-bottom:1px solid rgba(200,39,26,0.15);padding:0.85rem 1.25rem;">
+                <span style="font-family:'Oswald',sans-serif;font-size:0.85rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-secondary);">
+                    <i class="bi bi-reply me-2" style="color:var(--sky-blue);"></i>Quick Reply
+                </span>
+            </div>
+            <div style="padding:1.25rem;">
+                <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:1rem;">
+                    Reply directly to <strong style="color:var(--text-primary);">{{ query.email }}</strong> via your email client:
+                </p>
+                <a href="mailto:{{ query.email }}?subject=Re: {{ query.subject }} — NewsStream&body=Hi {{ query.name }},%0A%0AThank you for reaching out to NewsStream.%0A%0A----%0AYour original message:%0A{{ query.message[:200] }}"
+                   class="btn w-100"
+                   style="background:rgba(58,143,212,0.12);border:1px solid rgba(58,143,212,0.25);color:var(--sky-blue);font-weight:700;font-size:0.82rem;">
+                    <i class="bi bi-envelope-arrow-up me-2"></i>Open Email Client
+                </a>
+            </div>
+        </div>
+
+        <!-- META INFO -->
+        <div style="background:var(--bg-card);border:1px solid var(--navy-border);border-radius:var(--radius);padding:1.25rem;">
+            <h6 style="font-family:'Oswald',sans-serif;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);margin-bottom:1rem;">Query Details</h6>
+            {% for label, value in [
+                ('Query ID',     '#' ~ query.id),
+                ('Submitted',    query.submitted_at.strftime('%d %b %Y, %H:%M')),
+                ('Read',         '✓ Read' if query.is_read else '✗ Unread'),
+                ('Status',       'Resolved' if query.is_resolved else 'Pending'),
+                ('User Account', '@' ~ query.user.username if query.user else 'Guest / No Account'),
+            ] %}
+            <div class="d-flex justify-content-between mb-2" style="font-size:0.8rem;padding-bottom:0.5rem;border-bottom:1px solid var(--navy-border);">
+                <span style="color:var(--text-muted);font-weight:600;">{{ label }}</span>
+                <span style="color:var(--text-primary);font-weight:500;">{{ value }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
