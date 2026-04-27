@@ -1,6 +1,6 @@
 # NewsStream - Live News Portal
 
-A full-stack Flask news portal with live API news, AI summaries, bookmarks, user auth, and an admin panel.
+A full-stack Flask news portal with live API news, AI summaries, bookmarks, user auth and an admin panel.
 
 ---
 
